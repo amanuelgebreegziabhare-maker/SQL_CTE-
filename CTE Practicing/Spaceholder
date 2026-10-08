@@ -1,4 +1,21 @@
--- Step 1: Find the total Sales per Customers
+-- What is CTE
+/*
+A Common Table Expression (CTE) in SQL is a temporary named result set that you can 
+reference within the execution scope of a single SELECT, INSERT, UPDATE, or DELETE statement.
+Think of a CTE as a temporary virtual table. It is not stored in the database and disappears 
+as soon as the query finishes running.
+*/
+-- Types of CTE
+/************************************************************************************/
+--1. Standalone CTE --
+------------------------------------------------------------------------------------
+/*
+A standalone CTE (Common Table Expression) is a non-recursive temporary named result 
+set defined in SQL that operates completely independently.
+*/
+
+
+-- Step 1: Find the total Sales per Customers (Standalone CTE)
 
 WITH CTE_Total_Sales AS
 (
@@ -8,13 +25,45 @@ SELECT
 FROM Sales.Orders
 GROUP BY CustomerID
 )
+-- Step 2: Find the Last Order Date for each Customer (Standalone CTE)
+, CTE_Last_Order AS
+(
+SELECT
+	CustomerID,
+	MAX(OrderDate) AS Last_Order
+FROM Sales.Orders
+GROUP BY CustomerID
+)
+
+
+--2. Nested CTE --
+---------------------------------------------------------------------------------
+/* 
+What is Nested CTE
+CTE inside another CTE. A nested CTE uses the result of another CTE, so it can not run independantly.
+*/
+-- Step 3: Rank Customers based on Total Sales per Customers
+, CTE_Customers_Rank AS
+(
+SELECT 
+CustomerID,
+Total_Sales,
+RANK() OVER (ORDER BY Total_Sales DESC) AS CustomersRank
+FROM CTE_Total_Sales 
+)
 
 --Main Query
 SELECT
 	c.CustomerID,
 	c.FirstName,
 	c.LastName,
-	s.Total_Sales
+	s.Total_Sales,
+	l.Last_Order,
+	r.CustomersRank
 FROM Sales.Customers AS c
 LEFT JOIN CTE_Total_Sales AS s
 ON c.CustomerID = s.CustomerID
+LEFT JOIN CTE_Last_Order AS l
+ON c.CustomerID = l.CustomerID
+LEFT JOIN CTE_Customers_Rank AS r
+ON C.CustomerID = r.CustomerID
